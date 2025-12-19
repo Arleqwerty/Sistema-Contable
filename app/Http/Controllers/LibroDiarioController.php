@@ -14,14 +14,44 @@ class LibroDiarioController extends Controller
         return view('libros-diarios.index');
     }
 
+    public function pdf(Request $request)
+    {
+        $asientos = LibroDiario::where('estado', true)
+        ->selectRaw('
+            numero_asiento,
+            fecha,
+            descripcion,
+            COUNT(*) as total_partidas,
+            SUM(debe) as total_debe,
+            SUM(haber) as total_haber
+        ')
+        ->when($request->fecha_inicio, function ($query, $fecha) {
+            return $query->where('fecha', '>=', $fecha);
+        })
+        ->when($request->fecha_fin, function ($query, $fecha) {
+            return $query->where('fecha', '<=', $fecha);
+        })
+        ->groupBy('numero_asiento', 'fecha', 'descripcion')
+        ->orderBy('numero_asiento', 'desc')
+        ->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('libros-diarios.pdf', compact('asientos'));
+        return $pdf->stream('libro-diario.pdf');
+    }
+
     // Mostrar formulario de creación
     public function create()
     {
         // Obtener el próximo número de asiento
         $ultimoAsiento = LibroDiario::max('numero_asiento');
         $proximoAsiento = $ultimoAsiento ? $ultimoAsiento + 1 : 1;
+        
+        // Obtener cuentas imputables para el select
+        $cuentas = \App\Models\PlanDeCuentas::where('es_imputable', true)
+            ->orderBy('codigo')
+            ->get();
 
-        return view('libros-diarios/create', compact('proximoAsiento'));
+        return view('libros-diarios/create', compact('proximoAsiento', 'cuentas'));
     }
 
     // Guardar nuevo asiento contable
@@ -93,9 +123,18 @@ class LibroDiarioController extends Controller
     }
 
     // Datos para DataTable
-    public function data()
+    public function data(Request $request)
     {
-        $asientos = LibroDiario::selectRaw('
+        // Generar ETag basado en la última modificación de la tabla
+        $lastModified = LibroDiario::max('updated_at');
+        $etag = md5($lastModified ?? '0');
+
+        if ($request->header('If-None-Match') === $etag) {
+           return response()->noContent(304);
+        }
+
+        $asientos = LibroDiario::where('estado', true)
+        ->selectRaw('
             numero_asiento,
             fecha,
             descripcion,
@@ -109,7 +148,7 @@ class LibroDiarioController extends Controller
 
         return response()->json([
             'data' => $asientos
-        ]);
+        ])->setEtag($etag);
     }
 
     // Detalle de un asiento específico

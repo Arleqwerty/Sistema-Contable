@@ -46,10 +46,9 @@
                             <table class="table table-bordered" id="tabla-partidas">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th width="15%">Código Cuenta *</th>
-                                        <th width="35%">Nombre Cuenta *</th>
-                                        <th width="20%">Debe (Bs.) *</th>
-                                        <th width="20%">Haber (Bs.) *</th>
+                                        <th width="40%">Cuenta Contable *</th>
+                                        <th width="25%">Debe (Bs.) *</th>
+                                        <th width="25%">Haber (Bs.) *</th>
                                         <th width="10%">Acciones</th>
                                     </tr>
                                 </thead>
@@ -58,13 +57,13 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="2" class="text-right"><strong>Totales:</strong></td>
+                                        <td class="text-right"><strong>Totales:</strong></td>
                                         <td><strong id="total-debe">Bs. 0.00</strong></td>
                                         <td><strong id="total-haber">Bs. 0.00</strong></td>
                                         <td></td>
                                     </tr>
                                     <tr id="fila-balance" style="display: none;">
-                                        <td colspan="2" class="text-right"><strong>Diferencia:</strong></td>
+                                        <td class="text-right"><strong>Diferencia:</strong></td>
                                         <td colspan="3" class="text-center">
                                             <strong id="diferencia" class="text-danger">Bs. 0.00</strong>
                                         </td>
@@ -92,15 +91,33 @@
 
 @section('css')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css" rel="stylesheet">
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+        }
+    </style>
 @stop
 
 @section('js')
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <script>
     $(document).ready(function() {
         let contadorPartidas = 0;
+        
+        // Datos de cuentas para el select
+        const cuentasOptions = `
+            <option value="">Seleccione una cuenta...</option>
+            @foreach($cuentas as $cuenta)
+                <option value="{{ $cuenta->codigo }}" data-nombre="{{ $cuenta->nombre }}">
+                    {{ $cuenta->codigo }} - {{ $cuenta->nombre }}
+                </option>
+            @endforeach
+        `;
 
         // Agregar partida inicial (2 partidas mínimo)
         agregarPartida();
@@ -112,12 +129,10 @@
             const nuevaFila = `
                 <tr id="partida-${contadorPartidas}">
                     <td>
-                        <input type="text" class="form-control" name="partidas[${contadorPartidas}][codigo_cuenta]" 
-                               placeholder="Ej: 1101" required>
-                    </td>
-                    <td>
-                        <input type="text" class="form-control" name="partidas[${contadorPartidas}][nombre_cuenta]" 
-                               placeholder="Ej: Caja" required>
+                        <select class="form-control select2-cuenta" name="partidas[${contadorPartidas}][codigo_cuenta]" required style="width: 100%;">
+                            ${cuentasOptions}
+                        </select>
+                        <input type="hidden" name="partidas[${contadorPartidas}][nombre_cuenta]" class="nombre-cuenta">
                     </td>
                     <td>
                         <input type="number" class="form-control debe" name="partidas[${contadorPartidas}][debe]" 
@@ -138,14 +153,47 @@
                 </tr>
             `;
             $('#tabla-partidas tbody').append(nuevaFila);
+            
+            // Inicializar Select2 en el nuevo elemento
+            $(`#partida-${contadorPartidas} .select2-cuenta`).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Seleccione una cuenta'
+            });
+
             actualizarTotales();
         }
+
+        // Al cambiar la cuenta, actualizar el nombre oculto
+        $(document).on('change', '.select2-cuenta', function() {
+            const nombre = $(this).find(':selected').data('nombre');
+            $(this).closest('td').find('.nombre-cuenta').val(nombre);
+        });
 
         // Eliminar partida
         $(document).on('click', '.btn-eliminar', function() {
             const id = $(this).data('id');
-            $(`#partida-${id}`).remove();
-            actualizarTotales();
+            const row = $(`#partida-${id}`);
+            
+            Swal.fire({
+                title: '¿Está seguro de borrar la partida?',
+                text: "No podrá revertir esta acción",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, borrar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    row.remove();
+                    actualizarTotales();
+                    Swal.fire(
+                        '¡Borrado!',
+                        'La partida ha sido eliminada.',
+                        'success'
+                    )
+                }
+            })
         });
 
         // Actualizar totales
@@ -193,8 +241,8 @@
             const formData = new FormData(this);
 
             Swal.fire({
-                title: '¿Guardar asiento?',
-                text: "¿Está seguro de guardar este asiento contable?",
+                title: '¿Está seguro de guardar partida?',
+                text: "El asiento será registrado en el sistema",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',

@@ -11,6 +11,9 @@
         <div class="card-header">
             <h3 class="card-title">Listado de Asientos Contables</h3>
             <div class="card-tools">
+                <a href="{{ route('libro-diario.pdf') }}" class="btn btn-danger mr-2" target="_blank">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </a>
                 <a href="{{ route('libro-diario.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nuevo Asiento
                 </a>
@@ -119,6 +122,11 @@
                 url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
             }
         });
+
+        // Recargar tabla automáticamente cada 5 segundos para actualizaciones en tiempo real
+        setInterval(function() {
+            table.ajax.reload(null, false); // null = callback, false = keep paging
+        }, 5000);
 
         // Ver detalle del asiento
         $(document).on('click', '.btn-detalle', function() {

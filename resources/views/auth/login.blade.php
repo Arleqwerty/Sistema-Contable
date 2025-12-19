@@ -74,6 +74,11 @@
                         ¿No tienes cuenta? Regístrate
                     </a>
                 </p>
+                <p class="mb-0 mt-2 text-center">
+                    <a href="/admin/login" class="text-center btn btn-warning btn-block">
+                        <b>¿Eres Admin?</b> Ingresa aquí
+                    </a>
+                </p>
             </div>
         </div>
     </div>
