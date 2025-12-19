@@ -31,7 +31,7 @@ El sistema está construido sobre **Laravel 12** (última versión), aprovechand
 
 ## 3. Matriz de Roles y Permisos
 
-Hemos implementado un sistema de roles simple pero estricto:
+He implementado un sistema de roles simple pero estricto:
 
 | Rol | Email (Ejemplo) | Acceso a `/admin` (Filament) | Acceso a Panel Usuario (AdminLTE) | Permisos |
 | :--- | :--- | :--- | :--- | :--- |
@@ -71,21 +71,21 @@ Se implementó un generador de reportes en `LibroDiarioController::pdf`.
 
 ## 6. Dificultades Encontradas y Soluciones
 
-Durante el desarrollo nos enfrentamos a desafíos técnicos interesantes:
+Durante el desarrollo me enfrente a desafíos técnicos interesantes:
 
 ### A. El problema del "Agrupamiento" en PostgreSQL
 *   **Problema**: El Libro Diario guarda "partidas" (líneas), pero queríamos ver "Asientos" (grupos). PostgreSQL es muy estricto con `GROUP BY`.
-*   **Solución 1 (Fallida)**: Intentamos agrupar la consulta SQL directamente en Filament. Falló porque Filament intenta ordenar por `ID` automáticamente, lo cual choca con `GROUP BY`.
-*   **Solución Final**: Optamos por la funcionalidad nativa de **Agrupación Visual** de Filament (`->defaultGroup('numero_asiento')`). Es más estable y permite ver los subtotales sin romper la base de datos.
+*   **Solución 1 (Fallida)**: Intente agrupar la consulta SQL directamente en Filament. Falló porque Filament intenta ordenar por `ID` automáticamente, lo cual choca con `GROUP BY`.
+*   **Solución Final**: Opte por la funcionalidad nativa de **Agrupación Visual** de Filament (`->defaultGroup('numero_asiento')`). Es más estable y permite ver los subtotales sin romper la base de datos.
 
 ### B. Incompatibilidad de Versiones (Filament v4)
 *   **Problema**: Errores `Class not found: EditAction` y `Class not found: Form`.
-*   **Causa**: Descubrimos que el proyecto usa **Filament v4** (bleeding edge), donde cambiaron los namespaces de `Tables\Actions` a `Actions` y la clase `Form` se renombró a `Schema`.
-*   **Solución**: Actualizamos todos los `Resources` y `Tables` para usar los nuevos namespaces (`Filament\Schemas\Schema`, `Filament\Actions\EditAction`).
+*   **Causa**: Descubri que **Filament v4** (bleeding edge), cambiaron los namespaces de `Tables\Actions` a `Actions` y la clase `Form` se renombró a `Schema`.
+*   **Solución**: Actualizar todos los `Resources` y `Tables` para usar los nuevos namespaces (`Filament\Schemas\Schema`, `Filament\Actions\EditAction`).
 
 ### C. Rendimiento de la Vista de Usuario
-*   **Problema**: El usuario quería ver cambios en tiempo real. Polling cada 1 segundo saturaba el servidor local (respuesta de 3s).
-*   **Solución**: Implementamos **ETags (HTTP 304)**. El navegador pregunta "¿Hay cambios?", y si no los hay, el servidor responde en 5ms sin enviar datos. Además, ajustamos el intervalo a 5 segundos para un equilibrio perfecto.
+*   **Problema**: Quería ver cambios en tiempo real. Polling cada 1 segundo saturaba el servidor local (respuesta de 3s).
+*   **Solución**: Implemente **ETags (HTTP 304)**. El navegador pregunta "¿Hay cambios?", y si no los hay, el servidor responde en 5ms sin enviar datos. Además, ajustamos el intervalo a 5 segundos para un equilibrio perfecto.
 
 ---
 
