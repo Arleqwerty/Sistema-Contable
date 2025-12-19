@@ -81,11 +81,7 @@
                                 <i class="fas fa-book"></i> Ver Libro Diario
                             </a>
                         </div>
-                        <div class="col-12 mb-2">
-                            <button class="btn btn-info btn-block">
-                                <i class="fas fa-chart-bar"></i> Reportes Contables
-                            </button>
-                        </div>
+
                     </div>
                 </div>
             </div>
