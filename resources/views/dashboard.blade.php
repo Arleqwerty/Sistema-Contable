@@ -148,4 +148,62 @@
             </div>
         </div>
     </div>
+    <!-- Gráfico de Balance Diario -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">Movimiento Financiero (Últimos 7 días)</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="balanceChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+@stop
+
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var ctx = document.getElementById('balanceChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {!! json_encode($chartLabels) !!},
+                    datasets: [{
+                        label: 'Total Movido (Bs)',
+                        backgroundColor: 'rgba(60,141,188,0.9)',
+                        borderColor: 'rgba(60,141,188,0.8)',
+                        pointRadius: false,
+                        pointColor: '#3b8bba',
+                        pointStrokeColor: 'rgba(60,141,188,1)',
+                        pointHighlightFill: '#fff',
+                        pointHighlightStroke: 'rgba(60,141,188,1)',
+                        data: {!! json_encode($chartData) !!}
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    legend: {
+                        display: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            gridLines: {
+                                display: false,
+                            }
+                        }],
+                        yAxes: [{
+                            gridLines: {
+                                display: false,
+                            }
+                        }]
+                    }
+                }
+            });
+        });
+    </script>
 @stop

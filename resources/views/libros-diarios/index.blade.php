@@ -11,9 +11,9 @@
         <div class="card-header">
             <h3 class="card-title">Listado de Asientos Contables</h3>
             <div class="card-tools">
-                <a href="{{ route('libro-diario.pdf') }}" class="btn btn-danger mr-2" target="_blank">
+                <button type="button" class="btn btn-danger mr-2" data-toggle="modal" data-target="#modalPDF">
                     <i class="fas fa-file-pdf"></i> Exportar PDF
-                </a>
+                </button>
                 <a href="{{ route('libro-diario.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nuevo Asiento
                 </a>
@@ -37,6 +37,55 @@
                         <!-- DataTables llenará esto -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Exportar PDF -->
+    <div class="modal fade" id="modalPDF" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h5 class="modal-title w-100 text-center">Exportar Reporte PDF</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('libro-diario.pdf') }}" method="GET" target="_blank">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Seleccione el Rango de Tiempo:</label>
+                            <select class="form-control" id="rango_tiempo" name="rango">
+                                <option value="dia">Día (Hoy)</option>
+                                <option value="semana">Semana (Actual)</option>
+                                <option value="mes" selected>Mes (Actual)</option>
+                                <option value="anual">Anual (Actual)</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row" id="fechas_container" style="display: none;">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Fecha Inicio</label>
+                                    <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Fecha Fin</label>
+                                    <input type="date" class="form-control" name="fecha_fin" id="fecha_fin">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-download"></i> Generar PDF
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -81,6 +130,51 @@
     
     <script>
     $(document).ready(function() {
+        // Lógica del Modal de PDF
+        $('#rango_tiempo').change(function() {
+            var rango = $(this).val();
+            var hoy = new Date();
+            var inicio, fin;
+
+            // Funciones auxiliares para fechas
+            var formatDate = function(d) {
+                return d.toISOString().split('T')[0];
+            };
+
+            if (rango === 'personalizado') {
+                $('#fechas_container').show();
+                $('#fecha_inicio').prop('required', true);
+                $('#fecha_fin').prop('required', true);
+            } else {
+                $('#fechas_container').hide();
+                $('#fecha_inicio').prop('required', false);
+                $('#fecha_fin').prop('required', false);
+
+                if (rango === 'dia') {
+                    inicio = new Date(); // Hoy
+                    fin = new Date();
+                } else if (rango === 'semana') {
+                    var day = hoy.getDay() || 7; 
+                    if(day !== 1) hoy.setHours(-24 * (day - 1));
+                    inicio = hoy;
+                    fin = new Date(); 
+                } else if (rango === 'mes') {
+                    inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                    fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+                } else if (rango === 'anual') {
+                    inicio = new Date(hoy.getFullYear(), 0, 1);
+                    fin = new Date(hoy.getFullYear(), 11, 31);
+                }
+
+                if (inicio && fin) {
+                    $('#fecha_inicio').val(formatDate(inicio));
+                    $('#fecha_fin').val(formatDate(fin));
+                }
+            }
+        });
+
+        $('#rango_tiempo').trigger('change');
+
         // DataTable principal
         var table = $('#libro-diario').DataTable({
             ajax: '{{ route("libro-diario.data") }}',
@@ -123,9 +217,9 @@
             }
         });
 
-        // Recargar tabla automáticamente cada 5 segundos para actualizaciones en tiempo real
+        // Recargar tabla automáticamente cada 5 segundos
         setInterval(function() {
-            table.ajax.reload(null, false); // null = callback, false = keep paging
+            table.ajax.reload(null, false);
         }, 5000);
 
         // Ver detalle del asiento

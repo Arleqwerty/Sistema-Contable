@@ -55,7 +55,19 @@ Route::middleware(['auth'])->group(function () {
             ->groupBy('numero_asiento', 'fecha', 'descripcion')
             ->orderBy('numero_asiento', 'desc')
             ->limit(5)
+            ->limit(5)
             ->get();
+
+        // Datos para la gráfica (Últimos 7 días)
+        $balanceDiario = \App\Models\LibroDiario::selectRaw('DATE(fecha) as fecha_dia, SUM(debe) as total_debe, SUM(haber) as total_haber')
+            ->where('estado', true)
+            ->where('fecha', '>=', now()->subDays(7))
+            ->groupBy('fecha_dia')
+            ->orderBy('fecha_dia')
+            ->get();
+
+        $chartLabels = $balanceDiario->pluck('fecha_dia')->map(fn($date) => \Carbon\Carbon::parse($date)->format('d/m'))->toArray();
+        $chartData = $balanceDiario->map(fn($item) => $item->total_debe + $item->total_haber)->toArray();
 
         return view('dashboard', compact(
             'totalAsientos',
@@ -63,7 +75,10 @@ Route::middleware(['auth'])->group(function () {
             'totalDebe',
             'totalHaber',
             'totalMovimientos',
-            'ultimosAsientos'
+            'totalMovimientos',
+            'ultimosAsientos',
+            'chartLabels',
+            'chartData'
         ));
     })->name('dashboard');
 });
